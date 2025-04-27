@@ -1,0 +1,68 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.0.0",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "scripts": {
+    "postinstall": "patch-package",
+    "dev": "concurrently \"vite\" \"npm run start-electron\"",
+    "start-electron": "cross-env NODE_ENV=development npm run build-electron && electron .",
+    "build": "npm run build-electron && vite build",
+    "build-electron": "tsc -p electron/tsconfig.main.json && powershell -Command \"New-Item -ItemType Directory -Force -Path dist-electron/utils; Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force; Copy-Item electron/preload.js -Destination dist-electron/ -Force\"", 
+    "preview": "vite preview",
+    "copy-cjs": "powershell Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.example.myapp",
+    "productName": "My Electron App",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.2",
+    "he": "^1.2.0",
+    "mammoth": "^1.9.0",
+    "node-hwp": "^0.1.0-alpha",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.1.2",
+    "uuid": "^11.1.0",
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/he": "^1.2.3",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0",
+    "wait-on": "^8.0.3"
+  },
+  "author": "Your Name",
+  "description": "티처캔 평가 간소화 앱"
+}

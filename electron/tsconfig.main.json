@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "../dist-electron",
+    "rootDir": "./",
+    "esModuleInterop": true,
+    "strict": true,
+    "allowJs": true
+  },
+  "include": ["**/*.ts"],
+  "files": ["types/node-hwp.d.ts"],
+  "exclude": ["../dist-electron", "electron/preload.js"]
+}
