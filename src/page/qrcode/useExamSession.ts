@@ -29,7 +29,7 @@ export function useExamSession() {
       return;
     }
 
-    invoke('sse-start', { endpoint, subject, examId });
+    invoke('sse-start', { endpoint, subject: encodeURIComponent(subject), examId });
     console.log('[ExamSession] SSE 시작 요청 전송');
 
     const handleFileSaved = (data: { number: number }) => {

@@ -8,7 +8,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 let sseRequest = null;
 export function startSSE(info) {
-    const { endpoint, subject, examId } = info;
+    const { endpoint, subject: encodedSubject, examId } = info;
+    const subject = decodeURIComponent(encodedSubject); // ✅ 여기서 복원
     console.log(info);
     const req = http.request(endpoint, {
         headers: { Accept: 'text/event-stream' },
@@ -88,7 +89,8 @@ subject, sessionKey, studentNumber, examId) {
     try {
         const response = await fetch(`${process.env.VITE_API_BASE_URL}/${sessionKey}/${studentNumber}`);
         if (!response.ok) {
-            throw new Error('서버 응답 실패');
+            const errorJson = await response.json(); // 여기서 깨진 메시지가 아님
+            throw new Error(errorJson.message ?? '알 수 없는 오류');
         }
         const answerData = await response.json();
         saveAnswerData(subject, studentNumber, examId, answerData);
