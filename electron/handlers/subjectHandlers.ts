@@ -111,6 +111,14 @@ export function registerSubjectHandlers() {
   });
   
 
+  ipcMain.on('get-subjects', (event) => {
+    try {
+      const subjects = loadSubjects(); // 과목 배열 반환
+      event.sender.send('get-subjects-response', { success: true, data: subjects });
+    } catch (err) {
+      event.sender.send('get-subjects-response', { success: false, message: '과목 목록 로드 실패' });
+    }
+  });
 
 
 }

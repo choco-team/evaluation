@@ -47,46 +47,40 @@ export function useSubjectManager() {
 
   // 일렉트론 IPC 통신 핸들러 설정
   useEffect(() => {
-    // 데이터 응답 처리 함수
     const handleSubjectsResponse = (result: SubjectsResponse) => {
       setIsLoading(false);
       if (result.success && result.data) {
         setSubjects(result.data);
-        setSubmitResult({ success: true, message: '' }); // 메시지 초기화
+        setSubmitResult({ success: true, message: '' });
       } else {
         setSubmitResult({ success: false, message: result.message });
       }
     };
-
-    // 일반 응답 처리 함수
+  
     const handleOperationResponse = (result: OperationResponse) => {
       setIsLoading(false);
       setSubmitResult(result);
-      
-      // 성공적인 작업 후 목록 다시 로드
+  
       if (result.success) {
         loadSubjects();
       }
     };
-
-    // 각 채널별 리스너 등록
+  
     receive('get-subjects-response', handleSubjectsResponse);
     receive('add-subject-response', handleOperationResponse);
     receive('update-subject-response', handleOperationResponse);
     receive('delete-subject-response', handleOperationResponse);
-
-    // 컴포넌트 마운트 시 데이터 로드
+  
     loadSubjects();
-
-    // 컴포넌트 언마운트 시 리스너 제거
+  
     return () => {
-      removeListener('get-subjects-response');
-      removeListener('add-subject-response');
-      removeListener('update-subject-response');
-      removeListener('delete-subject-response');
+      removeListener('get-subjects-response', handleSubjectsResponse);
+      removeListener('add-subject-response', handleOperationResponse);
+      removeListener('update-subject-response', handleOperationResponse);
+      removeListener('delete-subject-response', handleOperationResponse);
     };
-  }, [send, receive, removeListener]); // 의존성 배열에 함수 추가
-
+  }, [send, receive, removeListener]);
+  
   // 교과목 추가 함수
   const addNewSubject = (): void => {
     // 이미 편집 중이면 추가 불가

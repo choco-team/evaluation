@@ -1,5 +1,5 @@
-// useStudents.ts - 학생 관리 비즈니스 로직 커스텀 훅
-import { useState, useEffect } from 'react';
+// useStudents.ts
+import { useState, useEffect, useCallback } from 'react';
 import { Student } from '../../../common/types/student';
 import { useElectron } from '../../../common/useElectron';
 
@@ -8,7 +8,7 @@ export interface SubmitResult {
   message: string;
 }
 
-export function useStudents() {
+export function useStudents(registerListeners = true) {
   const { send, receive, removeListener } = useElectron();
   const [students, setStudents] = useState<Student[]>([
     { name: null, number: null },
@@ -19,57 +19,58 @@ export function useStudents() {
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 일렉트론 IPC 통신 설정
+  // ✅ 핸들러는 useCallback으로 고정 (함수 외부에서 선언되면 클린업이 잘 됨)
+  const handleGetStudentsResponse = useCallback((result: { 
+    success: boolean; 
+    data?: Student[]; 
+    message: string 
+  }) => {
+    console.log('📥 [렌더러] get-students-response:', result);
+    setIsLoading(false);
+    if (result.success && result.data) {
+      setStudents(result.data);
+      setSubmitResult({ success: true, message: '' });
+    } else {
+      setSubmitResult({ success: false, message: result.message });
+    }
+  }, []);
+
+  const handleSaveStudentsResponse = useCallback((result: SubmitResult) => {
+    console.log('📥 [렌더러] save-students-response:', result);
+    setIsLoading(false);
+    setSubmitResult(result);
+  }, []);
+
+  // ✅ IPC 리스너 등록
   useEffect(() => {
-    // 학생 목록 응답 처리
-    const handleGetStudentsResponse = (result: { 
-      success: boolean; 
-      data?: Student[]; 
-      message: string 
-    }) => {
-      console.log('응답 도착')
-      setIsLoading(false);
-      if (result.success && result.data) {
-        setStudents(result.data);
-        setSubmitResult({ success: true, message: '' });
-      } else {
-        setSubmitResult({ success: false, message: result.message });
-      }
-    };
+    if (!registerListeners) return;
 
-    // 학생 저장 응답 처리
-    const handleSaveStudentsResponse = (result: SubmitResult) => {
-      setIsLoading(false);
-      setSubmitResult(result);
-    };
-
-    // 리스너 등록
+    console.log('[useStudents] 리스너 등록');
     receive('get-students-response', handleGetStudentsResponse);
     receive('save-students-response', handleSaveStudentsResponse);
 
-    // 컴포넌트 마운트 시 학생 목록 로드
-    getStudentList();
-
-    // 컴포넌트 언마운트 시 리스너 제거
     return () => {
-      removeListener('get-students-response');
-      removeListener('save-students-response');
+      console.log('[useStudents] 리스너 제거');
+      removeListener('get-students-response', handleGetStudentsResponse);
+      removeListener('save-students-response', handleSaveStudentsResponse);
     };
-  }, []);
+  }, [registerListeners, handleGetStudentsResponse, handleSaveStudentsResponse]);
 
-  // 학생 목록 가져오기
+  // ✅ 학생 목록 가져오기
   const getStudentList = () => {
+    console.log('📤 [렌더러] get-students 요청 전송');
     setIsLoading(true);
     send('get-students', null);
   };
 
-  // 학생 목록 저장
+  // ✅ 학생 목록 저장
   const saveStudentList = () => {
+    console.log('📤 [렌더러] save-students 요청 전송');
     setIsLoading(true);
     send('save-students', { students });
   };
 
-  // 학생 추가 함수
+  // ✅ 학생 추가
   const addStudent = () => {
     const lastStudent = students[students.length - 1];
     const lastNumber = lastStudent.number !== null ? Number(lastStudent.number) : 0;
@@ -80,20 +81,19 @@ export function useStudents() {
     setStudents([...students, newStudent]);
   };
 
-  // 학생 삭제 함수
+  // ✅ 학생 삭제
   const removeStudent = (index: number) => {
     if (students.length > 1) {
-      // 업데이트할 학생 배열 생성
       const updatedStudents = [...students];
       updatedStudents.splice(index, 1);
-      
+
       setIsLoading(true);
       setStudents(updatedStudents);
       send('save-students', { students: updatedStudents });
     }
   };
 
-  // 입력값 변경 핸들러
+  // ✅ 입력값 변경
   const handleInputChange = (index: number, field: keyof Student, value: string) => {
     const updatedStudents = [...students];
     updatedStudents[index] = { 
@@ -103,7 +103,7 @@ export function useStudents() {
     setStudents(updatedStudents);
   };
 
-  // 엑셀 가져오기 핸들러
+  // ✅ 엑셀 가져오기
   const handleImportedData = (importedStudents: Student[]) => {
     setStudents((prevStudents) => {
       let newStudents;
@@ -116,13 +116,12 @@ export function useStudents() {
       } else {
         newStudents = [...prevStudents, ...importedStudents];
       }
-      
-      // 서버에 반영
+
       setTimeout(() => {
         setIsLoading(true);
         send('save-students', { students: newStudents });
       }, 0);
-      
+
       return newStudents;
     });
   };

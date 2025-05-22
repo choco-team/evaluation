@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { loadQuestions, deleteQuestionById, saveQuestionList, loadQuestionById } from '../fileManager/questionFileManager.js';
+import { loadQuestions, deleteQuestionById, saveQuestionList, loadQuestionById, saveQuestions } from '../fileManager/questionFileManager.js';
 import { Question } from '../types/question-types.js';
 import { loadStudents } from '../fileManager/studentFileManager.js';
 
@@ -98,6 +98,19 @@ export function registerQuestionHandlers() {
       });
     }
   });
+
+    // 문제 저장하기
+    ipcMain.on('save-question', (event, payload) => {
+      try {
+        const { subject_name } = payload
+        saveQuestions(subject_name, payload); 
+        event.sender.send('save-question-response', { success: true, message: '문제 저장 완료' });
+      } catch (err) {
+        console.error('❌ 문제 저장 오류:', err);
+        event.sender.send('save-question-response', { success: false, message: '문제 저장 실패' });
+      }
+    });
+  
 
 
   ipcMain.handle('get-exam', async (event, { id, subject }) => {

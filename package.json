@@ -9,7 +9,7 @@
     "dev": "concurrently \"vite\" \"npm run start-electron\"",
     "start-electron": "cross-env NODE_ENV=development npm run build-electron && electron .",
     "build": "npm run build-electron && vite build",
-    "build-electron": "tsc -p electron/tsconfig.main.json && powershell -Command \"New-Item -ItemType Directory -Force -Path dist-electron/utils; Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force; Copy-Item electron/preload.js -Destination dist-electron/ -Force\"", 
+    "build-electron": "tsc -p electron/tsconfig.main.json && powershell -Command \"New-Item -ItemType Directory -Force -Path dist-electron/utils; Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force; Copy-Item electron/preload.js -Destination dist-electron/ -Force\"",
     "preview": "vite preview",
     "copy-cjs": "powershell Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force",
     "electron:build": "npm run build && electron-builder"
@@ -34,7 +34,9 @@
     "@tailwindcss/vite": "^4.1.2",
     "he": "^1.2.0",
     "mammoth": "^1.9.0",
+    "node-fetch": "^2.7.0",
     "node-hwp": "^0.1.0-alpha",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.1.2",
@@ -45,6 +47,9 @@
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@types/he": "^1.2.3",
+    "@types/node-fetch": "^2.6.12",
+    "@types/plist": "^3.0.5",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
@@ -64,5 +69,6 @@
     "wait-on": "^8.0.3"
   },
   "author": "Your Name",
-  "description": "티처캔 평가 간소화 앱"
+  "description": "티처캔 평가 간소화 앱",
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

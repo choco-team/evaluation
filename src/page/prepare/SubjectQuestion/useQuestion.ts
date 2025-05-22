@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePageStore } from '../../../common/store/use-page-store';
+import { usePageStore, useSessionInfoStore } from '../../../common/store/use-page-store';
 import useAnswerSheetStore from '../../../common/store/use-answer-sheet-store';
 import { useElectron } from '../../../common/useElectron';
 import { fetchExamData, registerSessionToServer } from './question-api';
@@ -12,7 +12,6 @@ import {
 } from './question-listeners';
 import { Question, OperationResult } from '../../../common/types/question-types';
 
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;  // 여기서 읽고 넘김
 
 export function useQuestion(subject: string | null, initialPage: number = 1) {
@@ -24,6 +23,15 @@ export function useQuestion(subject: string | null, initialPage: number = 1) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [operationResult, setOperationResult] = useState<OperationResult>({ success: false, message: '' });
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+// ✅ 컴포넌트 or 훅 최상단에서 한 번만 호출
+const setEndpoint = useSessionInfoStore(state => state.setEndpoint);
+const setQrcodeLink = useSessionInfoStore(state => state.setQrcodeLink);
+const setSubject = useSessionInfoStore(state => state.setSubject);
+const setExamId = useSessionInfoStore(state => state.setExamId);
+
+
+
 
   const getQuestionList = () => {
     setIsLoading(true);
@@ -42,9 +50,6 @@ export function useQuestion(subject: string | null, initialPage: number = 1) {
     }
   };
 
-  const openQrWindow = (url: string, endpoint: string) => {
-    send('open-exam-window', { url, endpoint });
-  };
 
   const handleTakeTest = async (id: string, subjectName: string) => {
     if (!subjectName) {
@@ -55,12 +60,17 @@ export function useQuestion(subject: string | null, initialPage: number = 1) {
     setIsLoading(true);
     try {
       const examData = await fetchExamData(invoke ,id, subjectName);
-      const sessionKey = await registerSessionToServer(API_BASE_URL, examData); // API_BASE_URL 넘김
+      const sessionKey = await registerSessionToServer(invoke, API_BASE_URL, examData); // API_BASE_URL 넘김
       const qrUrl = API_BASE_URL + '/evaluation/exam/' + sessionKey;
       const sseUrl =API_BASE_URL + '/evaluation/sse/' + sessionKey;;
-      openQrWindow(qrUrl, sseUrl);
+
+      setEndpoint(sseUrl);
+      setQrcodeLink(qrUrl);
+      setSubject(subjectName);
+      setExamId(id);
 
       setOperationResult({ success: true, message: '시험 준비 완료!' });
+      setCurrentPage('QrCode');
     } catch (error) {
       console.error('시험 시작 오류:', error);
       setOperationResult({ success: false, message: '시험 시작에 실패했습니다.' });
@@ -84,21 +94,30 @@ export function useQuestion(subject: string | null, initialPage: number = 1) {
   };
 
   useEffect(() => {
-    receive('get-question-list-response', (result) => handleQuestionListResponse(result, setQuestions, setOperationResult, setIsLoading));
-    receive('get-exam-response', (result) => handleExamResponse(result, send, setOperationResult, setIsLoading));
-    receive('get-question-edit-response', (result) => handleQuestionEditResponse(result, setSelectedSubject, setTitle, setComment, setContent, setAnswerSheet, setQuestionId, setCurrentPage, setOperationResult, setIsLoading));
-    receive('delete-question-response', (result) => handleDeleteResponse(result, getQuestionList, setOperationResult, setIsLoading));
-
+    const onList = (result: any) =>
+      handleQuestionListResponse(result, setQuestions, setOperationResult, setIsLoading);
+    const onExam = (result: any) =>
+      handleExamResponse(result, send, setOperationResult, setIsLoading);
+    const onEdit = (result: any) =>
+      handleQuestionEditResponse(result, setSelectedSubject, setTitle, setComment, setContent, setAnswerSheet, setQuestionId, setCurrentPage, setOperationResult, setIsLoading);
+    const onDelete = (result: any) =>
+      handleDeleteResponse(result, getQuestionList, setOperationResult, setIsLoading);
+  
+    receive('get-question-list-response', onList);
+    receive('get-exam-response', onExam);
+    receive('get-question-edit-response', onEdit);
+    receive('delete-question-response', onDelete);
+  
     getQuestionList();
-
+  
     return () => {
-      removeListener('get-question-list-response');
-      removeListener('get-exam-response');
-      removeListener('get-question-edit-response');
-      removeListener('delete-question-response');
+      removeListener('get-question-list-response', onList);
+      removeListener('get-exam-response', onExam);
+      removeListener('get-question-edit-response', onEdit);
+      removeListener('delete-question-response', onDelete);
     };
   }, [page, subject]);
-
+  
   return {
     page,
     questions,

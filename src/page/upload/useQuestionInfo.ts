@@ -45,69 +45,50 @@ export function useQuestionInfo() {
 
   // 일렉트론 IPC 통신 설정
   useEffect(() => {
-    // 과목 목록 응답 처리
-    const handleSubjectsResponse = (result: { 
-      success: boolean; 
-      data?: string[]; 
-      message: string 
-    }) => {
+    const handleSubjectsResponse = (result: { success: boolean; data?: string[]; message: string }) => {
       setIsLoading(false);
-      
       if (result.success && result.data) {
-        // uuid 추가
         const subjectsWithId = result.data.map((name: string) => ({
           name,
           uuid: uuidv4(),
         }));
-        
         setSubjectList(subjectsWithId);
       } else {
         setSubmitResult({ success: false, message: result.message });
       }
     };
-
-    // 문서 처리 응답
-    const handleDocumentResponse = (result: { 
-      success: boolean; 
-      text?: string; 
-      message: string 
-    }) => {
+  
+    const handleDocumentResponse = (result: { success: boolean; text?: string; message: string }) => {
       setIsLoading(false);
-      
       if (result.success && result.text) {
         setContent(result.text);
       } else {
         setSubmitResult({ success: false, message: result.message });
       }
     };
-
-    // 저장 응답
+  
     const handleSaveResponse = (result: SubmitResult) => {
       setIsLoading(false);
       setSubmitResult(result);
-      
       if (result.success) {
         setAnswerSheet([], []);
         setCurrentPage('prepare');
       }
     };
-
-    // 리스너 등록
+  
     receive('get-subjects-response', handleSubjectsResponse);
     receive('process-document-response', handleDocumentResponse);
     receive('save-question-response', handleSaveResponse);
-
-    // 컴포넌트 마운트 시 과목 목록 로드
+  
     fetchSubjectList();
-
-    // 컴포넌트 언마운트 시 리스너 제거
+  
     return () => {
-      removeListener('get-subjects-response');
-      removeListener('process-document-response');
-      removeListener('save-question-response');
+      removeListener('get-subjects-response', handleSubjectsResponse);
+      removeListener('process-document-response', handleDocumentResponse);
+      removeListener('save-question-response', handleSaveResponse);
     };
-  }, []);
-
+  }, [send, receive, removeListener]);
+  
   // 입력 핸들러
   const handleSubjectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSelectedSubject(e.target.value);

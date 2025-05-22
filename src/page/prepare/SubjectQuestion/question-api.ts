@@ -18,23 +18,18 @@ export const fetchExamData = async (
 };
 
 export const registerSessionToServer = async (
+  invoke: (channel: string, data?: any) => Promise<any>,
   apiBaseUrl: string,
   examData: { questionDetail: any; studentList: any }
-) => {
-  const response = await fetch(`${apiBaseUrl}/evaluation/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title:examData.questionDetail.title,
-      answerSheet: examData.questionDetail.answerSheet,
-      studentList: examData.studentList,
-    }),
+): Promise<string> => {
+  const result = await invoke('register-session', {
+    apiBaseUrl,
+    examData,
   });
 
-  if (!response.ok) {
-    throw new Error('서버에 세션 등록 실패');
+  if (!result.success) {
+    throw new Error(result.message || '서버에 세션 등록 실패');
   }
 
-  const { sessionKey } = await response.json();
-  return sessionKey;
+  return result.sessionKey; // 🔥 반환값은 sessionKey 하나
 };

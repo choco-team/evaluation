@@ -17,6 +17,8 @@ export default function RegisterStudent() {
     saveStudentList
   } = useStudents();
 
+
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-xl font-bold mb-4">학생 명단 입력</h1>

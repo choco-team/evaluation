@@ -6,14 +6,12 @@ import { registerSessionHandler } from './handlers/sessionHandler.js';
 import { registerSSEHandlers } from './handlers/sseHandler.js';
 import { registerStudentHandlers } from './handlers/studentHandlers.js';
 import { registerSubjectHandlers } from './handlers/subjectHandlers.js';
-
 export function registerIpcHandlers() {
-  registerSubjectHandlers();
-  registerStudentHandlers();
-  registerQuestionHandlers();
-  registerDocumentHandlers();
-  registerAnswerDataHandler();
-  registerSSEHandlers();
-  registerSessionHandler();
-  
+    registerSubjectHandlers();
+    registerStudentHandlers();
+    registerQuestionHandlers();
+    registerDocumentHandlers();
+    registerAnswerDataHandler();
+    registerSSEHandlers();
+    registerSessionHandler();
 }

@@ -15,10 +15,10 @@ export function useElectron() {
   }, []);
   
   // 이벤트 리스너 제거
-  const removeListener = useCallback((channel: string): void => {
-    (window as any).electronAPI.removeAllListeners(channel);
+  const removeListener = useCallback((channel: string, callback: ElectronCallback): void => {
+    (window as any).electronAPI.removeListener(channel, callback);
   }, []);
-
+  
   // invoke (요청-응답)
   const invoke = useCallback((channel: string, data: any): Promise<any> => {
     return (window as any).electronAPI.invoke(channel, data);
