@@ -8,7 +8,7 @@ interface QuestionTableProps {
   formatDate: (dateString: string) => string;
   onTakeTest: (id: string, subject: string) => void;
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (question: Question) => void;
   isLoading?: boolean;
 }
 
@@ -80,7 +80,7 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
                   <button
                     type="button"
                     className="px-3 py-1 bg-white border border-red-300 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md"
-                    onClick={() => onDelete(question.id)}
+                    onClick={() => onDelete(question)}
                     disabled={isLoading}
                   >
                     삭제

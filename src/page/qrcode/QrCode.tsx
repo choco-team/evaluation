@@ -1,3 +1,4 @@
+import { StudentAnswerStatus, useStudentStore } from '../../common/store/studentsStore';
 import { useSessionInfoStore, usePageStore } from '../../common/store/use-page-store';
 import { useElectron } from '../../common/useElectron';
 import { useExamSession } from './useExamSession';
@@ -5,9 +6,11 @@ import { useQrCode } from './useQrCode';
 import { useEffect } from 'react';
 
 export function QrCode() {
+  const electron = useElectron()
+
   const { studentList, submittedStudents } = useExamSession();
   const { generateQRCode, copyToClipboard } = useQrCode();
-  const { send } = useElectron(); // ✅ 여기에 미리 호출
+  const { send, receive } = useElectron(); // ✅ 여기에 미리 호출
 
   const qrcodeLink = useSessionInfoStore(state => state.qrcodeLink);
   const subject = useSessionInfoStore(state => state.subject);
@@ -16,12 +19,26 @@ export function QrCode() {
   const setCurrentPage = usePageStore(state => state.setCurrentPage);
 
   useEffect(() => {
+  const listener = (_event: any, data: StudentAnswerStatus) => {
+    useStudentStore.getState().addAnswerStatus(data);
+  };
+
+  receive('answer-check', listener);
+
+  return () => {
+    electron.removeListener('answer-check', listener);
+  };
+}, []);
+
+
+
+  useEffect(() => {
     if (!endpoint || !subject || !examId) {
       console.warn('SSE 연결 정보 부족');
       return;
     }
   
-    send('sse-start', { endpoint, subject, examId });
+    send('sse-start', { endpoint, subject:encodeURIComponent(subject), examId });
     console.log('SSE 연결 시작됨');
   }, [endpoint, subject, examId, send]); // ✅ 의존성 배열 추가
   
@@ -69,19 +86,34 @@ export function QrCode() {
         돌아가기
       </button>
 
-      <div className="mt-8 w-full max-w-md">
-        <h3 className="text-lg font-bold mb-2">제출 완료된 학생</h3>
-        <ul className="list-disc list-inside space-y-1">
-          {[...submittedStudents].sort((a, b) => a - b).map(number => {
-            const student = studentList.find(s => s.number === number);
-            return (
-              <li key={number}>
-                {student ? `${student.number}. ${student.name}` : `번호 ${number}`}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+<div className="mt-8 w-full max-w-md">
+  <h3 className="text-lg font-bold mb-2">✅ 제출 완료 학생</h3>
+  <ul className="list-disc list-inside space-y-1 mb-6">
+    {[...submittedStudents]
+      .sort((a, b) => a - b)
+      .map(number => {
+        const student = studentList.find(s => s.number === number);
+        return (
+          <li key={`submitted-${number}`}>
+            {student ? `${student.number}. ${student.name}` : `번호 ${number}`}
+          </li>
+        );
+      })}
+  </ul>
+
+  <h3 className="text-lg font-bold mb-2">⏳ 제출 미완료 학생</h3>
+  <ul className="list-disc list-inside space-y-1 text-gray-500">
+    {studentList
+      .filter(student => typeof student.number === 'number')
+      .filter(student => !submittedStudents.has(student.number!)) 
+      .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
+      .map(student => (
+        <li key={`not-submitted-${student.number}`}>
+          {student.number}번 {student.name}학생
+        </li>
+      ))}
+  </ul>
+</div>
     </div>
   );
 }

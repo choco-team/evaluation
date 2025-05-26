@@ -4,7 +4,9 @@ export interface Question {
     title: string;
     createdAt: string;
     subject: string;
-    
+    content: string;
+    comment: string;
+    correctAnswer: string[]
   }
   
   // API 응답 결과 인터페이스
@@ -35,3 +37,6 @@ export interface Question {
     createdAt: Date
   }
   
+export interface StudentAnswers {
+  [studentNumber: number]: AnswerSheetItem[];
+}

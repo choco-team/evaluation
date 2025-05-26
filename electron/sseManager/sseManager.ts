@@ -11,59 +11,62 @@ dotenv.config();
 
 let sseRequest: ClientRequest | null = null;
 
-    export function startSSE(info: { endpoint: string; subject: string; examId: string }) {
+export function startSSE(info: { endpoint: string; subject: string; examId: string }) {
   const { endpoint, subject: encodedSubject, examId } = info;
-  
-    const subject = decodeURIComponent(encodedSubject); // ✅ 여기서 복원
-        console.log(info)
-      
-        const req = http.request(endpoint, {
-          headers: { Accept: 'text/event-stream' },
-        });
-      
-        req.on('response', res => {
-          console.log('[SSE] Server Response Received');
-res.on('data', chunk => {
-  const raw = chunk.toString();
-  console.log('[SSE] Raw chunk:', raw); // 여기까지 나오면 연결은 OK
+  const subject = encodedSubject;
+  console.log('[SSE] Decoded subject:', subject); // ✅ 여기서 잘 나와야 함
 
-  const match = raw.match(/^data:\s*(.*)$/m);
-  if (!match) {
-    console.warn('[SSE] Data Type Error:', raw);
-    return;
-  }
+  console.log('[SSE] Trying to connect:', endpoint);
 
-  try {
-    const payload = match[1];
-    console.log('[SSE] Parsed payload string:', payload);
+  const req = http.request(endpoint, {
+    headers: { Accept: 'text/event-stream' },
+  });
 
-    if (!payload.trim().startsWith('{')) {
-      console.warn('[SSE] Response is not JSON:', payload);
-      return;
-    }
+  req.on('response', res => {
+    console.log('[SSE] Server Response Received');
 
-    const parsed = JSON.parse(payload);
-    console.log('[SSE] Parsed JSON:', parsed);
+    res.on('data', chunk => {
+      const raw = chunk.toString();
+      const match = raw.match(/^data:\s*(.*)$/m);
+      if (!match) return;
 
-    const number = parsed.number;
-    const sessionKey = parsed.sessionKey;
-    const win = getMainWindow();
+      try {
+        const payload = match[1];
+        if (!payload.trim().startsWith('{')) return;
 
-    requestMissingAnswerFromServer(win, subject, sessionKey, number, examId);
-  } catch (err) {
-    console.error('[SSE] JSON parse Error:', err);
-  }
-});
-                                  });
-      
-        req.on('error', err => {
-          console.error('[SSE] connect Error:', err);
-          getMainWindow().webContents.send('sse-error', err.message);
-        });
-      
-        req.end();
-        sseRequest = req;
+        const parsed = JSON.parse(payload);
+        const number = parsed.number;
+        const sessionKey = parsed.sessionKey;
+        const win = getMainWindow();
+
+        requestMissingAnswerFromServer(win, subject, sessionKey, number, examId);
+      } catch (err) {
+        console.error('[SSE] JSON parse Error:', err);
       }
+    });
+
+    // ✅ 연결이 끊어졌을 때 자동 재시도
+    res.on('end', () => {
+      console.warn('[SSE] Connection ended. Retrying in 3 seconds...');
+      setTimeout(() => startSSE(info), 3000);
+    });
+
+    res.on('close', () => {
+      console.warn('[SSE] Connection closed. Retrying in 3 seconds...');
+      setTimeout(() => startSSE(info), 3000);
+    });
+  });
+
+  req.on('error', err => {
+    console.error('[SSE] Connection error:', err);
+    getMainWindow().webContents.send('sse-error', err.message);
+    // ❗ 네트워크 단절 등의 경우에도 재시도
+    setTimeout(() => startSSE(info), 3000);
+  });
+
+  req.end();
+  sseRequest = req;
+}
       
 export function stopSSE() {
   if (sseRequest) {
@@ -120,13 +123,20 @@ async function requestMissingAnswerFromServer(
   }
 
   try {
-    const response = await fetch(`${process.env.VITE_API_BASE_URL}/${sessionKey}/${studentNumber}`);
+    const baseUrl = process.env.API_BASE_URL;
+    console.log('[DEBUG] API_BASE_URL:', baseUrl);
+    if (!baseUrl) {
+    console.error('[SSE] API_BASE_URL is undefined. Check .env or runtime config.');
+    return;
+}
+    const response = await fetch(`${baseUrl}/evaluation/${sessionKey}/${studentNumber}`);
     if (!response.ok) {
   const errorJson = await response.json(); // 여기서 깨진 메시지가 아님
   throw new Error(errorJson.message ?? '알 수 없는 오류');
     }
 
     const answerData = await response.json();
+    console.log('[saveAnswerData] subject:', subject);
     saveAnswerData(subject, studentNumber, examId, answerData);
     notifyRenderer(win, studentNumber, examId, 'missing');  // 저장 성공 후 알림
     console.log(`[SSE] Answer sheet received right: ${studentNumber} (${examId})`);

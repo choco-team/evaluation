@@ -9,8 +9,9 @@ dotenv.config();
 let sseRequest = null;
 export function startSSE(info) {
     const { endpoint, subject: encodedSubject, examId } = info;
-    const subject = decodeURIComponent(encodedSubject); // ✅ 여기서 복원
-    console.log(info);
+    const subject = encodedSubject;
+    console.log('[SSE] Decoded subject:', subject); // ✅ 여기서 잘 나와야 함
+    console.log('[SSE] Trying to connect:', endpoint);
     const req = http.request(endpoint, {
         headers: { Accept: 'text/event-stream' },
     });
@@ -18,21 +19,14 @@ export function startSSE(info) {
         console.log('[SSE] Server Response Received');
         res.on('data', chunk => {
             const raw = chunk.toString();
-            console.log('[SSE] Raw chunk:', raw); // 여기까지 나오면 연결은 OK
             const match = raw.match(/^data:\s*(.*)$/m);
-            if (!match) {
-                console.warn('[SSE] Data Type Error:', raw);
+            if (!match)
                 return;
-            }
             try {
                 const payload = match[1];
-                console.log('[SSE] Parsed payload string:', payload);
-                if (!payload.trim().startsWith('{')) {
-                    console.warn('[SSE] Response is not JSON:', payload);
+                if (!payload.trim().startsWith('{'))
                     return;
-                }
                 const parsed = JSON.parse(payload);
-                console.log('[SSE] Parsed JSON:', parsed);
                 const number = parsed.number;
                 const sessionKey = parsed.sessionKey;
                 const win = getMainWindow();
@@ -42,10 +36,21 @@ export function startSSE(info) {
                 console.error('[SSE] JSON parse Error:', err);
             }
         });
+        // ✅ 연결이 끊어졌을 때 자동 재시도
+        res.on('end', () => {
+            console.warn('[SSE] Connection ended. Retrying in 3 seconds...');
+            setTimeout(() => startSSE(info), 3000);
+        });
+        res.on('close', () => {
+            console.warn('[SSE] Connection closed. Retrying in 3 seconds...');
+            setTimeout(() => startSSE(info), 3000);
+        });
     });
     req.on('error', err => {
-        console.error('[SSE] connect Error:', err);
+        console.error('[SSE] Connection error:', err);
         getMainWindow().webContents.send('sse-error', err.message);
+        // ❗ 네트워크 단절 등의 경우에도 재시도
+        setTimeout(() => startSSE(info), 3000);
     });
     req.end();
     sseRequest = req;
@@ -87,12 +92,19 @@ subject, sessionKey, studentNumber, examId) {
         return;
     }
     try {
-        const response = await fetch(`${process.env.VITE_API_BASE_URL}/${sessionKey}/${studentNumber}`);
+        const baseUrl = process.env.API_BASE_URL;
+        console.log('[DEBUG] API_BASE_URL:', baseUrl);
+        if (!baseUrl) {
+            console.error('[SSE] API_BASE_URL is undefined. Check .env or runtime config.');
+            return;
+        }
+        const response = await fetch(`${baseUrl}/evaluation/${sessionKey}/${studentNumber}`);
         if (!response.ok) {
             const errorJson = await response.json(); // 여기서 깨진 메시지가 아님
             throw new Error(errorJson.message ?? '알 수 없는 오류');
         }
         const answerData = await response.json();
+        console.log('[saveAnswerData] subject:', subject);
         saveAnswerData(subject, studentNumber, examId, answerData);
         notifyRenderer(win, studentNumber, examId, 'missing'); // 저장 성공 후 알림
         console.log(`[SSE] Answer sheet received right: ${studentNumber} (${examId})`);

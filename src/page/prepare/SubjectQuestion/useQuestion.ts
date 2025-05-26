@@ -43,11 +43,10 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
     send('get-question-edit', { id, subject });
   };
 
-  const deleteQuestion = (id: string) => {
+  const deleteQuestion = (question: Question) => {
     if (window.confirm('정말로 이 평가지를 삭제하시겠습니까?')) {
       setIsLoading(true);
-      send('delete-question', { id, subject });
-    }
+    send('delete-question', { id: question.id, subject: question.subject });    }
   };
 
 
@@ -82,7 +81,7 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
   const handlePrevPage = () => { if (page > 1) setPage(page - 1); };
   const handleNextPage = () => { setPage(page + 1); };
   const handleEdit = (id: string) => { getQuestionForEdit(id); };
-  const handleDelete = (id: string) => { deleteQuestion(id); };
+  const handleDelete = (question: Question) => { deleteQuestion(question); };
   const handleCreate = () => {
     setSelectedSubject('');
     setAnswerSheet([], []);

@@ -12,6 +12,8 @@ interface SubjectCardProps {
   onCompleteEditing: () => void;
   onRemove: (subject: string) => void;
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleEvaluation: (subject:string) => void;
+
 }
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
@@ -25,7 +27,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   onStartEditing,
   onCompleteEditing,
   onRemove,
-  onNameChange
+  onNameChange,
+  handleEvaluation
 }) => {
   return (
     <div
@@ -88,6 +91,20 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         >
           {isEditingThis ? '완료' : '수정'}
         </button>
+
+        <button
+          type="button"
+          onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            e.stopPropagation();
+            handleEvaluation(subject);
+          }}
+          className="text-green-500 hover:text-green-700"
+          disabled={(isEditing && !isEditingThis) || isLoading}
+        >
+          평가
+        </button>
+
+
         <button
           type="button"
           onClick={(e: MouseEvent<HTMLButtonElement>) => {

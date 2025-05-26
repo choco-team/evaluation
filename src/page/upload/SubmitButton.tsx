@@ -13,7 +13,6 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
   isLoading = false
 }) => {
   return (
-    <div className="flex justify-end">
       <button
         type="button"
         onClick={onClick}
@@ -22,7 +21,6 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
       >
         {isLoading ? '처리 중...' : text}
       </button>
-    </div>
   );
 };
 

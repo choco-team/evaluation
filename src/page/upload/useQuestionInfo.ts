@@ -166,6 +166,10 @@ const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     send('save-question', questionData);
   };
 
+   const cancelButton = () => {
+    setCurrentPage('prepare');
+   }
+
   return {
     content,
     selectedSubject,
@@ -180,6 +184,7 @@ const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     handleTitleChange,
     handleCommentChange,
     handleFileChange,
-    submitQuestionData
+    submitQuestionData,
+    cancelButton
   };
 }

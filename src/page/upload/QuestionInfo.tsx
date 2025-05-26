@@ -25,7 +25,8 @@ export default function QuestionInfo() {
     handleTitleChange,
     handleCommentChange,
     handleFileChange,
-    submitQuestionData
+    submitQuestionData,
+    cancelButton
   } = useQuestionInfo();
 
   return (
@@ -83,14 +84,20 @@ export default function QuestionInfo() {
           <AnswerSheet />
         </div>
 
+    <div className="flex justify-end">
+
         {/* 제출 버튼 */}
         <SubmitButton 
           onClick={submitQuestionData}
           isLoading={isLoading}
         />
+        <button className='px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-70' onClick={cancelButton}>취소하기</button>
         
+        </div>
+
         {/* 상태 메시지 */}
         <StatusMessage result={submitResult} />
+
       </form>
     </div>
   );

@@ -2,10 +2,21 @@
 import { create } from 'zustand';
 import { Student } from '../types/student';
 
-interface StudentState {
+export interface StudentAnswerStatus {
+  studentNumber: number;
+  examId: string;
+  status: 'found' | 'missing';
+  timestamp: string;
+}
+
+export interface StudentState {
   students: Student[];
   setStudents: (data: Student[]) => void;
   loadStudents: () => void;
+
+  // ✅ 새로 추가
+  answerStatusLog: StudentAnswerStatus[];
+  addAnswerStatus: (data: StudentAnswerStatus) => void;
 }
 
 export const useStudentStore = create<StudentState>((set) => ({
@@ -15,6 +26,11 @@ export const useStudentStore = create<StudentState>((set) => ({
     // send는 외부에서 바인딩될 예정
     console.warn('loadStudents called before initialization');
   },
+    answerStatusLog: [],
+  addAnswerStatus: (entry) =>
+    set((state) => ({
+      answerStatusLog: [...state.answerStatusLog, entry],
+    })),
 }));
 
 // ❗ init 함수에서 Electron API 바인딩

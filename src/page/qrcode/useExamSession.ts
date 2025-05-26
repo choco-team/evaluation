@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useElectron } from '../../common/useElectron';
 import { useSessionInfoStore } from '../../common/store/use-page-store';
 import { useStudentStore } from '../../common/store/studentsStore'; // ✅ zustand store
@@ -8,19 +8,28 @@ export function useExamSession() {
 
   const students = useStudentStore(state => state.students); // ✅ zustand에서 직접 가져옴
   const loadStudents = useStudentStore(state => state.loadStudents); // ← 필요시 사용
-
-  const [submittedStudents, setSubmittedStudents] = useState<Set<number>>(new Set());
+  const answerLog = useStudentStore(state => state.answerStatusLog);
 
   const endpoint = useSessionInfoStore(state => state.endpoint);
   const subject = useSessionInfoStore(state => state.subject);
   const examId = useSessionInfoStore(state => state.examId);
 
-  // ✅ 학생 목록이 없다면 한번만 로딩
+  // 학생 목록이 비어있으면 로딩 시도
   useEffect(() => {
     if (students.length === 0) {
-      loadStudents(); // send('get-students') 호출됨
+      loadStudents();
     }
   }, [students.length, loadStudents]);
+
+  // 🔍 제출된 학생 번호 Set을 answerLog 기반으로 구함
+  const submittedStudents = useMemo(() => {
+    return new Set(
+      answerLog
+        .filter(entry => entry.status === 'missing') // 또는 'found' — 의미에 따라 선택
+        .map(entry => entry.studentNumber)
+    );
+  }, [answerLog]);
+
 
   // ✅ SSE 연결 생명주기 관리
   useEffect(() => {
@@ -29,20 +38,12 @@ export function useExamSession() {
       return;
     }
 
-    invoke('sse-start', { endpoint, subject: encodeURIComponent(subject), examId });
+    invoke('sse-start', { endpoint, subject, examId });
     console.log('[ExamSession] SSE 시작 요청 전송');
-
-    const handleFileSaved = (data: { number: number }) => {
-      console.log('[ExamSession] 제출 수신:', data);
-      setSubmittedStudents(prev => new Set(prev).add(data.number));
-    };
-
-    receive('file-saved', handleFileSaved);
 
     return () => {
       send('sse-stop', null);
       console.log('[ExamSession] SSE 종료 요청 전송');
-      removeListener('file-saved', handleFileSaved);
     };
   }, [endpoint, subject, examId, send, receive, removeListener]);
 

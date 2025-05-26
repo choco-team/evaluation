@@ -43,18 +43,38 @@ export function saveAnswerData(subject: string, number: number, examId: string, 
 /**
  * 특정 과목의 특정 학생이 특정 평가지의 답안을 가지고 있는지 확인
  */
-export function hasStudentAnswer(subject: string, number: number, examId: string): boolean {
+export function hasStudentAnswer(subject: string, number: number, examId: string | number): boolean {
   const subjectDir = path.join(PATHS.answer, subject);
   const studentFile = path.join(subjectDir, `student-${number}.json`);
 
-  if (!fs.existsSync(studentFile)) return false;
+  if (!fs.existsSync(studentFile)) {
+    console.log('[AnswerCheck] 파일 없음:', studentFile);
+    return false;
+  }
 
   try {
     const content = fs.readFileSync(studentFile, 'utf-8');
     const parsed = JSON.parse(content);
-    return examId in parsed;
+    const keys = Object.keys(parsed);
+    console.log(`[AnswerCheck] ${studentFile} → keys:`, keys, '| 찾는 examId:', String(examId));
+
+    return String(examId) in parsed;
   } catch (err) {
-    console.error('[AnswerFileManager] 파일 파싱 오류:', err);
+    console.error('[AnswerCheck] 파일 파싱 오류:', err);
     return false;
   }
+}
+
+
+export function getStudentAnswerData(subject:string, student: number){
+  const subjectDir = path.join(PATHS.answer, subject); // 과목별 디렉토리
+  const studentFile = path.join(subjectDir, `student-${student}.json`); // 학생별 파일
+
+    if (!fs.existsSync(subjectDir)) return null
+    if (!fs.existsSync(studentFile)) return null
+
+    const content = fs.readFileSync(studentFile, 'utf-8');
+    const parsed = JSON.parse(content)
+    if (!parsed) return null
+    return parsed
 }

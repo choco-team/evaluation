@@ -22,7 +22,7 @@ interface OperationResponse {
 
 export function useSubjectManager() {
   // 일렉트론 IPC 통신 훅 사용
-  const { send, receive, removeListener } = useElectron();
+  const { send, receive, removeListener, invoke } = useElectron();
 
   // 기본 데이터 상태
   const [subjects, setSubjects] = useState<string[]>([]);
@@ -210,6 +210,29 @@ export function useSubjectManager() {
   // 이미 '새 교과목'이 존재하는지 확인
   const newSubjectExists = subjects.includes('새 교과');
 
+
+    const handleEvaluation = async (subjectName: string) => {
+    if (!subjectName) throw new Error('과목 정보가 없습니다')
+    setIsLoading(true);
+    try{
+     const result = await invoke(`get-subject-prompt`, {subject: subjectName})
+     if (!result) alert('평가를 위한 프롬프트 생성 중 오류가 발생하였습니다')
+      alert('프롬프트 생성에 성공했습니다 프롬프트 파일 저장경로로 이동합니다')
+     const success = await invoke(`open-folder`, null);
+     if (!success){
+      alert('해당 위치를 찾을 수 없습니다')
+     }
+    return result
+    }
+    catch (error) {
+      alert(error)
+    }
+
+  }
+
+
+
+
   return {
     // 상태
     subjects,
@@ -229,6 +252,7 @@ export function useSubjectManager() {
     startEditing,
     cancelEditing,
     toggleSubjectSelection,
-    completeEditing
+    completeEditing,
+    handleEvaluation
   };
 }

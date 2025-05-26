@@ -22,7 +22,8 @@ export default function SubjectManager() {
     startEditing,
     cancelEditing,
     toggleSubjectSelection,
-    completeEditing
+    completeEditing,
+    handleEvaluation
   } = useSubjectManager();
 
   return (
@@ -52,6 +53,7 @@ export default function SubjectManager() {
         onCompleteEditing={completeEditing}
         onRemove={removeSubject}
         onNameChange={handleNameInputChange}
+        handleEvaluation={handleEvaluation}
       />
 
       <SubjectQuestion subject={selectedSubject} initialPage={1} />

@@ -14,6 +14,7 @@ interface SubjectGridProps {
   onCompleteEditing: () => void;
   onRemove: (subject: string) => void;
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleEvaluation: (subject:string) => void;
 }
 
 export const SubjectGrid: React.FC<SubjectGridProps> = ({
@@ -27,7 +28,8 @@ export const SubjectGrid: React.FC<SubjectGridProps> = ({
   onStartEditing,
   onCompleteEditing,
   onRemove,
-  onNameChange
+  onNameChange,
+  handleEvaluation
 }) => {
   if (subjects.length === 0) {
     return (
@@ -53,6 +55,7 @@ export const SubjectGrid: React.FC<SubjectGridProps> = ({
           onCompleteEditing={onCompleteEditing}
           onRemove={onRemove}
           onNameChange={onNameChange}
+          handleEvaluation={handleEvaluation}
         />
       ))}
     </div>
