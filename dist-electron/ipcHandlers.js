@@ -1,7 +1,7 @@
 // ipcHandlers.ts
 import { registerAnswerDataHandler } from './handlers/answerDataHandler.js';
 import { registerDocumentHandlers } from './handlers/documentHandlers.js';
-import { registerpromptCreatingHandlers } from './handlers/promptCreatingHandlers.js';
+import { registerPromptCreatingHandlers } from './handlers/promptCreatingHandlers.js';
 import { registerQuestionHandlers } from './handlers/questionHandlers.js';
 import { registerSessionHandler } from './handlers/sessionHandler.js';
 import { registerSSEHandlers } from './handlers/sseHandler.js';
@@ -15,5 +15,5 @@ export function registerIpcHandlers() {
     registerAnswerDataHandler();
     registerSSEHandlers();
     registerSessionHandler();
-    registerpromptCreatingHandlers();
+    registerPromptCreatingHandlers();
 }

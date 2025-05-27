@@ -4,7 +4,7 @@ import { getStudentAnswerData } from '../fileManager/answerDataFileManager.js';
 import { loadStudents } from '../fileManager/studentFileManager.js';
 import { createPromptText, openFolder } from '../fileManager/promptFileManager.js';
 const maxLength = 150;
-export async function registerpromptCreatingHandlers() {
+export async function registerPromptCreatingHandlers() {
     ipcMain.handle('get-subject-prompt', async (event, payload) => {
         console.log('프롬프트 생성 요청');
         try {

@@ -17,16 +17,20 @@ function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
+        icon: path.join(__dirname, 'assets', 'teachercan.ico'),
+        frame: true, // 닫기/최소화/최대화 버튼 있는 기본 창 테두리 사용
+        autoHideMenuBar: true, // Alt 누르면만 메뉴바 잠깐 표시됨 (Windows 기준)
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true
         }
     });
+    mainWindow.setMenu(null); // 메뉴 완전 제거
     mainWindow.loadFile(isDev
         ? path.join(rootPath, 'dist', 'index.html')
-        : path.join(__dirname, 'dist', 'index.html'));
-    mainWindow.webContents.openDevTools();
+        : path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html'));
+    // mainWindow.webContents.openDevTools();
     setMainWindow(mainWindow);
 }
 app.whenReady().then(() => {

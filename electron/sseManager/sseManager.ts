@@ -1,77 +1,92 @@
 // electron/sse/sseManager.ts
-import http from 'http';
-import type { ClientRequest } from 'http';
 import { saveAnswerData } from '../fileManager/answerDataFileManager.js';
 import { getMainWindow } from '../windowManager.js';
 import { loadStudents } from '../fileManager/studentFileManager.js';
 import { hasStudentAnswer } from '../fileManager/answerDataFileManager.js';
-import dotenv from 'dotenv';
 import { BrowserWindow } from 'electron';
-dotenv.config();
+import  { EventSource } from 'eventsource';
 
-let sseRequest: ClientRequest | null = null;
+let sseConnection: EventSource | null = null;
+
+/**
+ * 답안이 없는 학생 번호 목록을 반환
+ * @param subject 과목명
+ */
+function checkStudentsAllData(subject: string, examId:string): number[] {
+  const studentNumberList = loadStudents().map(student => student.number);
+
+  const AnswerList: number[] = [];
+
+  for (const number of studentNumberList) {
+   if (number && hasStudentAnswer(subject, number as number, examId)) AnswerList.push(number)
+  }
+
+  return AnswerList;
+}    
+
 
 export function startSSE(info: { endpoint: string; subject: string; examId: string }) {
-  const { endpoint, subject: encodedSubject, examId } = info;
-  const subject = encodedSubject;
-  console.log('[SSE] Decoded subject:', subject); // ✅ 여기서 잘 나와야 함
+  if (sseConnection) {
+    console.log('[SSE] Already connected. Skipping reconnection.');
+    return;
+  }
+  const win = getMainWindow();
+  const { endpoint, subject, examId } = info;
 
+  // SSE 연결 사전에 제출자 체크
+  const alreadySubmitted = checkStudentsAllData(subject, examId)
+  alreadySubmitted.forEach(number => {
+  notifyRenderer(win, number, examId, 'missing');
+  console.log(`[INIT] 기존 제출자 알림 전송됨: ${number}`);
+});
+
+
+  console.log('[SSE] Decoded subject:', subject);
   console.log('[SSE] Trying to connect:', endpoint);
 
-  const req = http.request(endpoint, {
-    headers: { Accept: 'text/event-stream' },
-  });
+  const es = new EventSource(endpoint);
 
-  req.on('response', res => {
-    console.log('[SSE] Server Response Received');
+  es.onopen = () => {
+    console.log('[SSE] Connection opened');
+  };
 
-    res.on('data', chunk => {
-      const raw = chunk.toString();
-      const match = raw.match(/^data:\s*(.*)$/m);
-      if (!match) return;
+  es.onmessage = event => {
+    try {
+      const payload = event.data;
+      if (!payload.trim().startsWith('{')) return;
 
-      try {
-        const payload = match[1];
-        if (!payload.trim().startsWith('{')) return;
+      const parsed = JSON.parse(payload);
+      const number = parsed.number;
+      const sessionKey = parsed.sessionKey;
+      const win = getMainWindow();
 
-        const parsed = JSON.parse(payload);
-        const number = parsed.number;
-        const sessionKey = parsed.sessionKey;
-        const win = getMainWindow();
+      requestMissingAnswerFromServer(win, subject, sessionKey, number, examId);
+    } catch (err) {
+      console.error('[SSE] JSON parse error:', err);
+    }
+  };
 
-        requestMissingAnswerFromServer(win, subject, sessionKey, number, examId);
-      } catch (err) {
-        console.error('[SSE] JSON parse Error:', err);
-      }
-    });
-
-    // ✅ 연결이 끊어졌을 때 자동 재시도
-    res.on('end', () => {
-      console.warn('[SSE] Connection ended. Retrying in 3 seconds...');
-      setTimeout(() => startSSE(info), 3000);
-    });
-
-    res.on('close', () => {
-      console.warn('[SSE] Connection closed. Retrying in 3 seconds...');
-      setTimeout(() => startSSE(info), 3000);
-    });
-  });
-
-  req.on('error', err => {
+  es.onerror = err => {
     console.error('[SSE] Connection error:', err);
-    getMainWindow().webContents.send('sse-error', err.message);
-    // ❗ 네트워크 단절 등의 경우에도 재시도
-    setTimeout(() => startSSE(info), 3000);
-  });
+    getMainWindow().webContents.send('sse-error', err.message ?? 'unknown error');
 
-  req.end();
-  sseRequest = req;
+    // 재연결 실패로 끊어진 경우에는 수동 재시도
+    if (es.readyState === EventSource.CLOSED) {
+      console.warn('[SSE] Stream closed. Retrying in 3 seconds...');
+      sseConnection = null;
+      setTimeout(() => startSSE(info), 3000);
+    }
+  };
+
+  sseConnection = es;
 }
-      
+
+
 export function stopSSE() {
-  if (sseRequest) {
-    sseRequest.destroy();
-    sseRequest = null;
+  if (sseConnection) {
+    sseConnection.close();
+    sseConnection = null;
+    console.log('[SSE] Connection manually closed');
   }
 }
 
@@ -94,21 +109,6 @@ export function notifyRenderer(
 }
 
 
-/**
- * 답안이 없는 학생 번호 목록을 반환
- * @param subject 과목명
- */
-export function checkStudentsAllData(subject: string, examId:string): number[] {
-  const studentNumberList = loadStudents().map(student => student.number);
-
-  const noAnswerList: number[] = [];
-
-  for (const number of studentNumberList) {
-   if (number && !hasStudentAnswer(subject, number as number, examId)) noAnswerList.push(number)
-  }
-
-  return noAnswerList;
-}    
 
 async function requestMissingAnswerFromServer(
   win: BrowserWindow,  // BrowserWindow 인스턴스를 넘겨받음
@@ -123,7 +123,7 @@ async function requestMissingAnswerFromServer(
   }
 
   try {
-    const baseUrl = process.env.API_BASE_URL;
+    const baseUrl = process.env.VITE_API_BASE_URL;
     console.log('[DEBUG] API_BASE_URL:', baseUrl);
     if (!baseUrl) {
     console.error('[SSE] API_BASE_URL is undefined. Check .env or runtime config.');
@@ -132,13 +132,17 @@ async function requestMissingAnswerFromServer(
     const response = await fetch(`${baseUrl}/evaluation/${sessionKey}/${studentNumber}`);
     if (!response.ok) {
   const errorJson = await response.json(); // 여기서 깨진 메시지가 아님
-  throw new Error(errorJson.message ?? '알 수 없는 오류');
+  throw new Error(errorJson.message ?? 'unkown Error');
     }
 
     const answerData = await response.json();
     console.log('[saveAnswerData] subject:', subject);
     saveAnswerData(subject, studentNumber, examId, answerData);
-    notifyRenderer(win, studentNumber, examId, 'missing');  // 저장 성공 후 알림
+
+
+    notifyRenderer(win, studentNumber, examId, 'missing');
+
+
     console.log(`[SSE] Answer sheet received right: ${studentNumber} (${examId})`);
   } catch (error) {
     console.error(`[SSE] Answer sheet request fail: ${studentNumber} (${examId})`, error);

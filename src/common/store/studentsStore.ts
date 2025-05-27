@@ -28,9 +28,21 @@ export const useStudentStore = create<StudentState>((set) => ({
   },
     answerStatusLog: [],
   addAnswerStatus: (entry) =>
-    set((state) => ({
-      answerStatusLog: [...state.answerStatusLog, entry],
-    })),
+  set((state) => {
+    if (
+      entry &&
+      typeof entry.studentNumber === 'number' &&
+      typeof entry.examId === 'string' &&
+      (entry.status === 'found' || entry.status === 'missing')
+    ) {
+      return {
+        answerStatusLog: [...state.answerStatusLog, entry],
+      };
+    }
+
+    console.warn('[zustand] 무효한 answerStatusLog entry 무시됨:', entry);
+    return {};
+  }),
 }));
 
 // ❗ init 함수에서 Electron API 바인딩

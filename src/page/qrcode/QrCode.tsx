@@ -6,11 +6,10 @@ import { useQrCode } from './useQrCode';
 import { useEffect } from 'react';
 
 export function QrCode() {
-  const electron = useElectron()
+const { send, receive, removeListener } = useElectron(); // ✅ 딱 한 번만 호출
 
   const { studentList, submittedStudents } = useExamSession();
   const { generateQRCode, copyToClipboard } = useQrCode();
-  const { send, receive } = useElectron(); // ✅ 여기에 미리 호출
 
   const qrcodeLink = useSessionInfoStore(state => state.qrcodeLink);
   const subject = useSessionInfoStore(state => state.subject);
@@ -23,10 +22,16 @@ export function QrCode() {
     useStudentStore.getState().addAnswerStatus(data);
   };
 
-  receive('answer-check', listener);
+receive('answer-check', (data) => {
+  if (data && typeof data.studentNumber === 'number') {
+    useStudentStore.getState().addAnswerStatus(data);
+  } else {
+    console.warn('[IPC] 잘못된 answer-check 데이터 수신:', data);
+  }
+});
 
   return () => {
-    electron.removeListener('answer-check', listener);
+    removeListener('answer-check', listener);
   };
 }, []);
 
@@ -95,7 +100,7 @@ export function QrCode() {
         const student = studentList.find(s => s.number === number);
         return (
           <li key={`submitted-${number}`}>
-            {student ? `${student.number}. ${student.name}` : `번호 ${number}`}
+            {student ? `${student.number}번 ${student.name}` : `번호 ${number}`}
           </li>
         );
       })}
@@ -109,7 +114,7 @@ export function QrCode() {
       .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
       .map(student => (
         <li key={`not-submitted-${student.number}`}>
-          {student.number}번 {student.name}학생
+          {student.number}번 {student.name}
         </li>
       ))}
   </ul>

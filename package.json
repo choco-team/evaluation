@@ -14,24 +14,36 @@
     "copy-cjs": "powershell Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force",
     "electron:build": "npm run build && electron-builder"
   },
-  "build": {
-    "appId": "com.example.myapp",
-    "productName": "My Electron App",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*"
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    }
+"build": {
+  "appId": "com.example.myapp",
+  "productName": "teachercan_evaluation",
+  "icon": "electron/assets/teachercan",
+  "directories": {
+    "output": "release"
   },
+  "files": [
+    {
+      "from": "dist",
+      "to": "dist",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "dist-electron",
+      "to": "dist-electron",
+      "filter": ["**/*"]
+    },
+    "preload.js",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      "nsis"
+    ]
+  }
+},
   "dependencies": {
     "@tailwindcss/vite": "^4.1.2",
+    "eventsource": "^4.0.0",
     "he": "^1.2.0",
     "mammoth": "^1.9.0",
     "node-fetch": "^2.7.0",
