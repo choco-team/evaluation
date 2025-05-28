@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { registerIpcHandlers } from './ipcHandlers.js'; // 실제 경로에 맞게 수정
 import { setMainWindow } from './windowManager.js';
+import { stopSSE } from './sseManager/sseManager.js';
 const isDev = !app.isPackaged;
 // ESM 환경에서 __dirname 구현
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +42,13 @@ app.whenReady().then(() => {
             createWindow();
     });
 });
+app.on('before-quit', () => {
+    console.log('[Electron] App 종료 직전 → SSE 연결 정리');
+    stopSSE();
+});
 app.on('window-all-closed', () => {
+    console.log('[Electron] 모든 창 닫힘 → SSE 정리');
+    stopSSE();
     if (process.platform !== 'darwin')
         app.quit();
 });

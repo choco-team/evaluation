@@ -10,6 +10,7 @@ interface QuestionTableProps {
   onEdit: (id: string) => void;
   onDelete: (question: Question) => void;
   isLoading?: boolean;
+  page: number
 }
 
 const QuestionTable: React.FC<QuestionTableProps> = ({
@@ -19,7 +20,8 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
   onTakeTest,
   onEdit,
   onDelete,
-  isLoading = false
+  isLoading = false,
+  page
 }) => {
   if (questions.length === 0) {
     return (
@@ -31,6 +33,12 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
     );
   }
   console.log('💬 [QuestionTable] questions:', questions);
+
+const pageSize = 20;
+const start = (page - 1) * pageSize;
+const end = page * pageSize;
+const currentQuestionList = questions.slice(start, end);
+
 
 
   return (

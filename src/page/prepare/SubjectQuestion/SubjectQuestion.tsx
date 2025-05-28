@@ -54,6 +54,7 @@ export default function SubjectQuestion({ subject, initialPage = 1 }: SubjectQue
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
+        page={page}
       />
 
       {/* 질문이 있을 경우에만 페이지네이션 표시 */}

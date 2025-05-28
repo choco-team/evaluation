@@ -17,6 +17,7 @@ export interface StudentState {
   // ✅ 새로 추가
   answerStatusLog: StudentAnswerStatus[];
   addAnswerStatus: (data: StudentAnswerStatus) => void;
+  resetAnswerStatus: () => void;
 }
 
 export const useStudentStore = create<StudentState>((set) => ({
@@ -27,6 +28,9 @@ export const useStudentStore = create<StudentState>((set) => ({
     console.warn('loadStudents called before initialization');
   },
     answerStatusLog: [],
+
+    resetAnswerStatus: () => set({ answerStatusLog: [] }),
+    
   addAnswerStatus: (entry) =>
   set((state) => {
     if (

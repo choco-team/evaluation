@@ -18,6 +18,8 @@ const { send, receive, removeListener } = useElectron(); // ✅ 딱 한 번만 �
   const setCurrentPage = usePageStore(state => state.setCurrentPage);
 
   useEffect(() => {
+    useStudentStore.getState().resetAnswerStatus()
+
   const listener = (_event: any, data: StudentAnswerStatus) => {
     useStudentStore.getState().addAnswerStatus(data);
   };
@@ -32,6 +34,7 @@ receive('answer-check', (data) => {
 
   return () => {
     removeListener('answer-check', listener);
+    send('sse-stop', null);
   };
 }, []);
 

@@ -8,39 +8,45 @@
     "postinstall": "patch-package",
     "dev": "concurrently \"vite\" \"npm run start-electron\"",
     "start-electron": "cross-env NODE_ENV=development npm run build-electron && electron .",
-    "build": "npm run build-electron && vite build",
+    "build": "dotenv -e .env.production -- npm run build:all",
+    "build:all": "npm run build-electron && vite build",
     "build-electron": "tsc -p electron/tsconfig.main.json && powershell -Command \"New-Item -ItemType Directory -Force -Path dist-electron/utils; Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force; Copy-Item electron/preload.js -Destination dist-electron/ -Force\"",
     "preview": "vite preview",
     "copy-cjs": "powershell Copy-Item electron/utils/hwpParser.cjs -Destination dist-electron/utils/ -Force",
     "electron:build": "npm run build && electron-builder"
   },
-"build": {
-  "appId": "com.example.myapp",
-  "productName": "teachercan_evaluation",
-  "icon": "electron/assets/teachercan",
-  "directories": {
-    "output": "release"
+  "build": {
+    "compression": "maximum",
+    "appId": "com.example.myapp",
+    "productName": "teachercan_evaluation",
+    "icon": "electron/assets/teachercan",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      {
+        "from": "dist",
+        "to": "dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "dist-electron",
+        "to": "dist-electron",
+        "filter": [
+          "**/*"
+        ]
+      },
+      "preload.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
   },
-  "files": [
-    {
-      "from": "dist",
-      "to": "dist",
-      "filter": ["**/*"]
-    },
-    {
-      "from": "dist-electron",
-      "to": "dist-electron",
-      "filter": ["**/*"]
-    },
-    "preload.js",
-    "package.json"
-  ],
-  "win": {
-    "target": [
-      "nsis"
-    ]
-  }
-},
   "dependencies": {
     "@tailwindcss/vite": "^4.1.2",
     "eventsource": "^4.0.0",
@@ -67,6 +73,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
+    "dotenv-cli": "^8.0.0",
     "electron": "^35.2.1",
     "electron-builder": "^26.0.12",
     "eslint": "^9.21.0",
