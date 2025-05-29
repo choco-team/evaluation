@@ -7,7 +7,7 @@ interface QuestionTableProps {
   subject: string | null;
   formatDate: (dateString: string) => string;
   onTakeTest: (id: string, subject: string) => void;
-  onEdit: (id: string) => void;
+  onEdit: (id: string, subject: string) => void;
   onDelete: (question: Question) => void;
   isLoading?: boolean;
   page: number
@@ -80,7 +80,7 @@ const currentQuestionList = questions.slice(start, end);
                   <button
                     type="button"
                     className="px-3 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 flex items-center gap-x-1.5"
-                    onClick={() => onEdit(question.id)}
+                    onClick={() => onEdit(question.id, question.subject)}
                     disabled={isLoading}
                   >
                     수정

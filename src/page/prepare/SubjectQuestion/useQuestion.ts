@@ -38,9 +38,9 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
     send('get-question-list', { page, subject });
   };
 
-  const getQuestionForEdit = (id: string) => {
+  const getQuestionForEdit = (id: string, subjectName:string) => {
     setIsLoading(true);
-    send('get-question-edit', { id, subject });
+    send('get-question-edit', { id, subject:subjectName });
   };
 
   const deleteQuestion = (question: Question) => {
@@ -80,7 +80,7 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
 
   const handlePrevPage = () => { if (page > 1) setPage(page - 1); };
   const handleNextPage = () => { setPage(page + 1); };
-  const handleEdit = (id: string) => { getQuestionForEdit(id); };
+  const handleEdit = (id: string, subject:string) => { getQuestionForEdit(id, subject); };
   const handleDelete = (question: Question) => { deleteQuestion(question); };
   const handleCreate = () => {
     setSelectedSubject('');
