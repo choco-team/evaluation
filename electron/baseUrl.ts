@@ -1,1 +1,1 @@
-export const serverURL = 'https://test.teachercan.com'
+export const serverURL = 'https://api.teachercan.com'
