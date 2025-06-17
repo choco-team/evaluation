@@ -83,10 +83,6 @@ export function notifyRenderer(win, studentNumber, examId, status) {
     });
 }
 async function requestMissingAnswerFromServer(win, subject, sessionKey, studentNumber, examId) {
-    if (hasStudentAnswer(subject, studentNumber, examId)) {
-        console.log(`[SSE] Already downloaded: ${studentNumber} (${examId})`);
-        return;
-    }
     try {
         if (!serverURL) {
             console.error('[SSE] serverURL undefined. Check config.');

@@ -130,10 +130,6 @@ async function requestMissingAnswerFromServer(
   studentNumber: number,
   examId: string
 ) {
-  if (hasStudentAnswer(subject, studentNumber, examId)) {
-    console.log(`[SSE] Already downloaded: ${studentNumber} (${examId})`);
-    return;
-  }
 
   try {
     if (!serverURL) {
