@@ -12,7 +12,7 @@ import {
 } from './question-listeners';
 import { Question, OperationResult } from '../../../common/types/question-types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;  // 여기서 읽고 넘김
+const API_BASE_URL = 'https://api.teachercan.com';  // 여기서 읽고 넘김
 
 export function useQuestion(subject: string | null, initialPage: number = 1) {
   const { send, receive, removeListener, invoke } = useElectron();
