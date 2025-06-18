@@ -8,6 +8,7 @@ export const PATHS = {
     prompts: path.join(BASE_DIR, '프롬프트'),
     exam: path.join(BASE_DIR, '평가지'),
     answer: path.join(BASE_DIR, '답안지'),
+    templates: path.join(BASE_DIR),
 };
 // 경로가 디렉토리일 경우 존재하지 않으면 생성
 function ensureDirectories() {

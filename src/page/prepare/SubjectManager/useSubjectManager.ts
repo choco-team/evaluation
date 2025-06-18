@@ -216,8 +216,8 @@ export function useSubjectManager() {
     setIsLoading(true);
     try{
      const result = await invoke(`get-subject-prompt`, {subject: subjectName})
-     if (!result) alert('평가를 위한 프롬프트 생성 중 오류가 발생하였습니다')
-      alert('프롬프트 생성에 성공했습니다 프롬프트 파일 저장경로로 이동합니다')
+     if (!result) alert('평가 기준 프롬프트 생성 중 오류가 발생하였습니다')
+      alert('평가 기준 프롬프트 생성에 성공했습니다 해당 파일 저장경로로 이동합니다')
      const success = await invoke(`open-folder`, null);
      if (!success){
       alert('해당 위치를 찾을 수 없습니다')
