@@ -227,6 +227,9 @@ export function useSubjectManager() {
     catch (error) {
       alert(error)
     }
+    finally {
+      setIsLoading(false)
+    }
 
   }
 
