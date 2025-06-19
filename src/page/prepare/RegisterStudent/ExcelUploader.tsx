@@ -55,7 +55,7 @@ const ExcelUploader: React.FC<ExtendedExcelUploaderProps> = ({
       onDataImported(students)      
     } catch (err) {
       console.error('엑셀 파싱 오류:', err);
-      alert('엑셀 파일을 처리하는 중 오류가 발생했습니다.');
+      window.electronAPI.showMessageBox('엑셀 파일을 처리하는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
       event.target.value = ''; // 파일 초기화

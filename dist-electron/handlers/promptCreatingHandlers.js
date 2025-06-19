@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { loadQuestions, loadQuestionById } from '../fileManager/questionFileManager.js'; // loadQuestionById 다시 추가
+import { loadQuestions } from '../fileManager/questionFileManager.js'; // loadQuestionById 다시 추가
 import { getStudentAnswerData } from '../fileManager/answerDataFileManager.js';
 import { getStudentDirectEvaluations } from '../fileManager/directEvaluationFileManager.js';
 import { loadStudents } from '../fileManager/studentFileManager.js';
@@ -33,41 +33,49 @@ export async function registerPromptCreatingHandlers() {
                 }
                 // 템플릿을 그대로 사용
                 let text = basePromptText;
-                // ===== 답안평가 섹션 =====
-                if (studentAnswers && questions.length > 0) {
+                // 문항별로 평가 타입에 따라 데이터 추가
+                let hasAnyEvaluationData = false;
+                // 답안평가 문제들 처리
+                const answerQuestions = questions.filter(q => !q.evaluationType || q.evaluationType === 'answer');
+                if (answerQuestions.length > 0 && studentAnswers) {
                     text += "\n\n=== 답안평가 결과 ===\n";
-                    for (let q = 0; q < questions.length; q++) {
-                        const id = questions[q].id;
+                    for (let q = 0; q < answerQuestions.length; q++) {
+                        const question = answerQuestions[q];
+                        const id = question.id;
+                        const questionNumber = parseInt(id) || (q + 1); // id를 숫자로 변환, 실패시 순서 사용
                         const questionText = `
-${q + 1}번째 평가지 : ${questions[q].content}
-평가 참고 사항 : ${questions[q].comment}
-평가 모범답안 : ${questions[q].correctAnswer}
+${questionNumber}번째 평가항목(답안평가) : ${question.content}
+평가 참고 사항 : ${question.comment}
+평가 모범답안 : ${question.correctAnswer}
 학생 작성 답안 : ${studentAnswers[Number(id)] ?? '답안 없음'}
 `;
-                        text = text + questionText;
+                        text += questionText;
                     }
+                    hasAnyEvaluationData = true;
                 }
-                // ===== 직접평가 섹션 =====
-                if (directEvaluations && Object.keys(directEvaluations).length > 0) {
+                // 직접평가 문제들 처리
+                const directQuestions = questions.filter(q => q.evaluationType === 'direct');
+                if (directQuestions.length > 0 && directEvaluations && Object.keys(directEvaluations).length > 0) {
                     text += "\n\n=== 직접평가 결과 ===\n";
-                    let directEvalIndex = 1;
-                    Object.values(directEvaluations).forEach(evaluation => {
-                        // 평가항목 정보 조회 (교사가 직접 입력한 제목과 설명)
-                        const evaluationItem = loadQuestionById(subject, evaluation.evaluationId);
-                        const evaluationTitle = evaluationItem?.title || '직접평가';
-                        const evaluationDescription = evaluationItem?.comment || '';
-                        const directEvalText = `
-${directEvalIndex}번째 직접평가: ${evaluationTitle}
+                    directQuestions.forEach(question => {
+                        const evaluation = directEvaluations[question.id];
+                        if (evaluation) {
+                            const questionNumber = parseInt(question.id) || 1; // id를 숫자로 변환
+                            const evaluationTitle = question.title || '직접평가';
+                            const evaluationDescription = question.comment || '';
+                            const directEvalText = `
+${questionNumber}번째 평가항목(직접평가): ${evaluationTitle}
 ${evaluationDescription ? `평가 설명: ${evaluationDescription}` : ''}
 평가 내용: ${evaluation.result}
 ${evaluation.score !== undefined ? `점수: ${evaluation.score}점` : '점수: 미입력'}
 `;
-                        text += directEvalText;
-                        directEvalIndex++;
+                            text += directEvalText;
+                        }
                     });
+                    hasAnyEvaluationData = true;
                 }
                 // 평가 데이터가 있는 경우에만 프롬프트 생성
-                if (studentAnswers || Object.keys(directEvaluations || {}).length > 0) {
+                if (hasAnyEvaluationData) {
                     console.log(`${number}번 학생 프롬프트 생성 완료`);
                     createPromptText(subject, number, text);
                 }

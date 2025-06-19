@@ -19,4 +19,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // ✅ 추가해줘야 함!
   sseStart: (info) => ipcRenderer.invoke('sse-start', info),
+  // 🔧 Dialog API 추가
+  showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
 });

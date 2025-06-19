@@ -11,6 +11,7 @@ import {
   handleExamResponse
 } from './question-listeners';
 import { Question, OperationResult } from '../../../common/types/question-types';
+import { electronConfirm } from '../../../common/utils/electronDialog';
 
 const API_BASE_URL = 'https://api.teachercan.com';  // 여기서 읽고 넘김
 
@@ -43,8 +44,8 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
     send('get-question-edit', { id, subject:subjectName });
   };
 
-  const deleteQuestion = (question: Question) => {
-    if (window.confirm('정말로 이 평가지를 삭제하시겠습니까?')) {
+  const deleteQuestion = async (question: Question) => {
+    if (await electronConfirm('정말로 이 평가지를 삭제하시겠습니까?')) {
       setIsLoading(true);
     send('delete-question', { id: question.id, subject: question.subject });    }
   };
@@ -81,7 +82,7 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
   const handlePrevPage = () => { if (page > 1) setPage(page - 1); };
   const handleNextPage = () => { setPage(page + 1); };
   const handleEdit = (id: string, subject:string) => { getQuestionForEdit(id, subject); };
-  const handleDelete = (question: Question) => { deleteQuestion(question); };
+  const handleDelete = async (question: Question) => { await deleteQuestion(question); };
   const handleCreate = () => {
     setSelectedSubject('');
     setAnswerSheet([], []);

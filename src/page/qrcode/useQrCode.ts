@@ -20,7 +20,7 @@ export function useQrCode() {
     navigator.clipboard.writeText(text)
       .then(() => {
         console.log('복사 성공:', text);
-        alert('URL이 복사되었습니다!');
+        window.electronAPI.showMessageBox('URL이 복사되었습니다!');
       })
       .catch((err) => {
         console.error('복사 실패:', err);
