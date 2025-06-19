@@ -24,7 +24,13 @@ export function loadQuestions(subject: string | null): Question[] {
     const filePath = getQuestionFilePath(subject);
     if (!fs.existsSync(filePath)) return [];
     const raw = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(raw);
+    const questions = JSON.parse(raw);
+    
+    // evaluationType 기본값 보장
+    return questions.map((question: Question) => ({
+      ...question,
+      evaluationType: question.evaluationType || 'answer'
+    }));
   } else {
     // ✅ 모든 과목을 로드
     const allSubjects = loadSubjects(); // 예를 들어 ['국어', '수학', '과학']
@@ -37,7 +43,12 @@ export function loadQuestions(subject: string | null): Question[] {
         const raw = fs.readFileSync(filePath, 'utf-8');
         try {
           const questions: Question[] = JSON.parse(raw);
-          allQuestions = allQuestions.concat(questions);
+          // evaluationType 기본값 보장
+          const questionsWithType = questions.map((question: Question) => ({
+            ...question,
+            evaluationType: question.evaluationType || 'answer'
+          }));
+          allQuestions = allQuestions.concat(questionsWithType);
         } catch (err) {
           console.error(`⚠️ 파일 파싱 실패: ${subj}.json`, err);
         }
@@ -64,6 +75,7 @@ export function saveQuestions(subject: string, newQuestion: Question): void {
   const questionWithId = {
     ...newQuestion,
     id: nextId,
+    evaluationType: newQuestion.evaluationType || 'answer', // 기본값 설정
   };
 
   questions.push(questionWithId);
@@ -87,5 +99,14 @@ export function saveQuestionList(subject: string, questions: Question[]): void {
 export function loadQuestionById(subject: string, id: string): Question | null {
   const list = loadQuestions(subject);
   const question = list.find(q => q.id == id); // 문자열 비교는 == 써도 무방
-  return question || null;
+  
+  if (question) {
+    // evaluationType이 없는 기존 데이터에 대한 기본값 보장
+    return {
+      ...question,
+      evaluationType: question.evaluationType || 'answer'
+    };
+  }
+  
+  return null;
 }

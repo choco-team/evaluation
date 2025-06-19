@@ -10,6 +10,7 @@ export const PATHS = {
   prompts: path.join(BASE_DIR, '프롬프트'),
   exam: path.join(BASE_DIR, '평가지'),
   answer: path.join(BASE_DIR, '답안지'),
+  directEvaluation: path.join(BASE_DIR, '직접평가'), // 직접평가 폴더 추가
   templates: path.join(BASE_DIR),
 };
 

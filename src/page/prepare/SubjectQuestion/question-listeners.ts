@@ -71,7 +71,7 @@ export const handleQuestionEditResponse = (
     setContent: SetState<string>,
     setAnswerSheet: (answerSheet: AnswerSheetItem[], correctAnswers: any) => void,
     setQuestionId: SetState<number | undefined>,
-    setCurrentPage: SetState<string>,
+    setCurrentPage: (page: string, data?: any) => void, // pageData 매개변수 추가
     setOperationResult: SetState<OperationResult>,
     setIsLoading: SetState<boolean>,
   ) => {
@@ -80,28 +80,46 @@ export const handleQuestionEditResponse = (
     if (result.success && result.data) {
       const data = result.data;
   
-      const answerSheetWithIds = data.answerSheet.map((item: AnswerSheetItem) => ({
-        ...item,
-        id: item.id || uuidv4(),
-      }));
-  
-      let numId: number | undefined = undefined;
-      if (typeof data.id === 'string') {
-        const parsed = parseInt(data.id, 10);
-        if (!isNaN(parsed)) {
-          numId = parsed;
+      // 평가 타입에 따른 페이지 분기
+      const evaluationType = data.evaluationType || 'answer'; // 기본값은 답안평가
+      
+      if (evaluationType === 'direct') {
+        // 직접평가인 경우: DirectEvaluationCreator로 이동 (평가 항목 수정)
+        console.log('[question-listeners] 직접평가 항목 수정 페이지로 이동:', data);
+        setCurrentPage('DirectEvaluationCreator', {
+          evaluationId: data.id,
+          title: data.title,
+          description: data.comment,
+          subject: data.subject, // 수정 모드에서 과목 정보 전달
+          isEditMode: true // 수정 모드 플래그
+        });
+      } else {
+        // 답안평가인 경우: 기존 WritingPage로 이동
+        console.log('[question-listeners] 답안평가 수정 페이지로 이동:', data);
+        
+        const answerSheetWithIds = data.answerSheet.map((item: AnswerSheetItem) => ({
+          ...item,
+          id: item.id || uuidv4(),
+        }));
+    
+        let numId: number | undefined = undefined;
+        if (typeof data.id === 'string') {
+          const parsed = parseInt(data.id, 10);
+          if (!isNaN(parsed)) {
+            numId = parsed;
+          }
+        } else if (typeof data.id === 'number') {
+          numId = data.id;
         }
-      } else if (typeof data.id === 'number') {
-        numId = data.id;
+    
+        setQuestionId(numId);
+        setSelectedSubject(data.subject ?? '');
+        setTitle(data.title ?? '');
+        setComment(data.comment ?? '');
+        setContent(data.content ?? '');
+        setAnswerSheet(answerSheetWithIds, data.correctAnswer);
+        setCurrentPage('WritingPage');
       }
-  
-      setQuestionId(numId);
-      setSelectedSubject(data.subject ?? '');
-      setTitle(data.title ?? '');
-      setComment(data.comment ?? '');
-      setContent(data.content ?? '');
-      setAnswerSheet(answerSheetWithIds, data.correctAnswer);
-      setCurrentPage('WritingPage');
     } else {
       setOperationResult({ success: false, message: result.message });
     }

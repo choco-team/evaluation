@@ -3,13 +3,15 @@ import { create } from 'zustand';
 // 페이지 이동용
 interface PageState {
   currentPage: string;
-  setCurrentPage: (page: string) => void;
+  pageData?: any; // 페이지 이동 시 데이터 전달용
+  setCurrentPage: (page: string, data?: any) => void;
 }
 
 // 페이지 상태 store
 export const usePageStore = create<PageState>((set) => ({
   currentPage: 'prepare', // 기본값은 '준비 페이지'
-  setCurrentPage: (page) => set({ currentPage: page }),
+  pageData: undefined,
+  setCurrentPage: (page, data) => set({ currentPage: page, pageData: data }),
 }));
 
 

@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { loadQuestions, deleteQuestionById, saveQuestionList, loadQuestionById, saveQuestions } from '../fileManager/questionFileManager.js';
+import { loadQuestions, deleteQuestionById, saveQuestionList, loadQuestionById } from '../fileManager/questionFileManager.js';
 import { loadStudents } from '../fileManager/studentFileManager.js';
 export function registerQuestionHandlers() {
     ipcMain.on('get-question-list', (event, payload) => {
@@ -26,27 +26,41 @@ export function registerQuestionHandlers() {
             const list = loadQuestions(subject);
             let updated;
             if (payload.id) {
-                // id가 있는 경우: 기존 id 삭제 후 삽입
-                updated = [...list.filter(q => q.id != payload.id), payload];
+                // id가 있는 경우: 기존 항목 수정
+                const existingQuestion = list.find(q => q.id === payload.id);
+                const updatedQuestion = {
+                    ...payload,
+                    // 수정 시 기존 createdAt 유지
+                    createdAt: existingQuestion?.createdAt || payload.createdAt || new Date().toISOString(),
+                    // 수정 시간 추가
+                    updatedAt: new Date().toISOString()
+                };
+                updated = [...list.filter(q => q.id != payload.id), updatedQuestion];
+                console.log('[questionHandlers] 평가 항목 수정 완료:', payload.id);
             }
             else {
                 // id가 없는 경우: 새로운 고유 id 생성
                 const existingIds = list.map(q => Number(q.id)).filter(id => !isNaN(id));
                 const nextId = existingIds.length > 0 ? (Math.max(...existingIds) + 1).toString() : '1';
-                const questionToSave = { ...payload, id: nextId };
+                const questionToSave = {
+                    ...payload,
+                    id: nextId,
+                    createdAt: payload.createdAt || new Date().toISOString()
+                };
                 updated = [...list, questionToSave];
+                console.log('[questionHandlers] 새 평가 항목 생성 완료:', nextId);
             }
             saveQuestionList(subject, updated);
             event.sender.send('save-question-response', {
                 success: true,
-                message: '문항이 저장되었습니다.',
+                message: payload.id ? '평가 항목이 수정되었습니다.' : '평가 항목이 생성되었습니다.',
             });
         }
         catch (err) {
             console.error('save-question error:', err);
             event.sender.send('save-question-response', {
                 success: false,
-                message: '문항 저장 중 오류 발생',
+                message: '평가 항목 저장 중 오류 발생',
             });
         }
     });
@@ -92,18 +106,7 @@ export function registerQuestionHandlers() {
             });
         }
     });
-    // 문제 저장하기
-    ipcMain.on('save-question', (event, payload) => {
-        try {
-            const { subject_name } = payload;
-            saveQuestions(subject_name, payload);
-            event.sender.send('save-question-response', { success: true, message: '문제 저장 완료' });
-        }
-        catch (err) {
-            console.error('❌ 문제 저장 오류:', err);
-            event.sender.send('save-question-response', { success: false, message: '문제 저장 실패' });
-        }
-    });
+    // 중복된 핸들러 제거 (위에서 이미 처리됨)
     ipcMain.handle('get-exam', async (event, { id, subject }) => {
         const examData = loadQuestionById(subject, id);
         const students = loadStudents();

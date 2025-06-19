@@ -19,7 +19,12 @@ export function loadQuestions(subject) {
         if (!fs.existsSync(filePath))
             return [];
         const raw = fs.readFileSync(filePath, 'utf-8');
-        return JSON.parse(raw);
+        const questions = JSON.parse(raw);
+        // evaluationType 기본값 보장
+        return questions.map((question) => ({
+            ...question,
+            evaluationType: question.evaluationType || 'answer'
+        }));
     }
     else {
         // ✅ 모든 과목을 로드
@@ -31,7 +36,12 @@ export function loadQuestions(subject) {
                 const raw = fs.readFileSync(filePath, 'utf-8');
                 try {
                     const questions = JSON.parse(raw);
-                    allQuestions = allQuestions.concat(questions);
+                    // evaluationType 기본값 보장
+                    const questionsWithType = questions.map((question) => ({
+                        ...question,
+                        evaluationType: question.evaluationType || 'answer'
+                    }));
+                    allQuestions = allQuestions.concat(questionsWithType);
                 }
                 catch (err) {
                     console.error(`⚠️ 파일 파싱 실패: ${subj}.json`, err);
@@ -53,6 +63,7 @@ export function saveQuestions(subject, newQuestion) {
     const questionWithId = {
         ...newQuestion,
         id: nextId,
+        evaluationType: newQuestion.evaluationType || 'answer', // 기본값 설정
     };
     questions.push(questionWithId);
     fs.writeFileSync(filePath, JSON.stringify(questions, null, 2), 'utf-8');
@@ -71,5 +82,12 @@ export function saveQuestionList(subject, questions) {
 export function loadQuestionById(subject, id) {
     const list = loadQuestions(subject);
     const question = list.find(q => q.id == id); // 문자열 비교는 == 써도 무방
-    return question || null;
+    if (question) {
+        // evaluationType이 없는 기존 데이터에 대한 기본값 보장
+        return {
+            ...question,
+            evaluationType: question.evaluationType || 'answer'
+        };
+    }
+    return null;
 }
