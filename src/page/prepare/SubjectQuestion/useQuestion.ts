@@ -43,10 +43,12 @@ const setExamId = useSessionInfoStore(state => state.setExamId);
     send('get-question-edit', { id, subject:subjectName });
   };
 
-  const deleteQuestion = (question: Question) => {
-    if (window.confirm('정말로 이 평가지를 삭제하시겠습니까?')) {
+  const deleteQuestion = async (question: Question) => {
+    const result = await invoke('show-confirm-dialog', '정말로 이 평가지를 삭제하시겠습니까?', '평가지 삭제');
+    if (result.confirmed) {
       setIsLoading(true);
-    send('delete-question', { id: question.id, subject: question.subject });    }
+      send('delete-question', { id: question.id, subject: question.subject });
+    }
   };
 
 

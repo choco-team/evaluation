@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useState } from 'react';
 import { Student, ExcelUploaderProps } from '../../../common/types/student';
+import { useElectron } from '../../../common/useElectron';
 import * as XLSX from 'xlsx';
 
 interface ExtendedExcelUploaderProps extends ExcelUploaderProps {
@@ -25,6 +26,7 @@ const ExcelUploader: React.FC<ExtendedExcelUploaderProps> = ({
   onDataImported,
   disabled = false
 }) => {
+  const { invoke } = useElectron();
   const [isLoading, setIsLoading] = useState(false);
 
   // 엑셀 파일 파싱 및 처리
@@ -55,7 +57,7 @@ const ExcelUploader: React.FC<ExtendedExcelUploaderProps> = ({
       onDataImported(students)      
     } catch (err) {
       console.error('엑셀 파싱 오류:', err);
-      alert('엑셀 파일을 처리하는 중 오류가 발생했습니다.');
+      await invoke('show-error-dialog', '엑셀 파일을 처리하는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
       event.target.value = ''; // 파일 초기화

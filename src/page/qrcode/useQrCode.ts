@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
+import { useElectron } from '../../common/useElectron';
 
 export function useQrCode() {
+  const { invoke } = useElectron();
+  
   const generateQRCode = useCallback((canvasId: string, url: string) => {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (canvas) {
@@ -12,20 +15,19 @@ export function useQrCode() {
     }
   }, []);
 
-  const copyToClipboard = useCallback((text: string) => {
+  const copyToClipboard = useCallback(async (text: string) => {
     if (!text) {
       console.warn('복사할 텍스트가 없습니다.');
       return;
     }
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        console.log('복사 성공:', text);
-        alert('URL이 복사되었습니다!');
-      })
-      .catch((err) => {
-        console.error('복사 실패:', err);
-      });
-  }, []);
+    try {
+      await navigator.clipboard.writeText(text);
+      console.log('복사 성공:', text);
+      await invoke('show-success-dialog', 'URL이 복사되었습니다!');
+    } catch (err) {
+      console.error('복사 실패:', err);
+    }
+  }, [invoke]);
 
   return { generateQRCode, copyToClipboard };
 }
